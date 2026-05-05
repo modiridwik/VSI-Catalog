@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSI Surfaces — Quartz Collection Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #141414;
+  --white: #faf8f5;
+  --gold:  #e5a020;
+  --gold-dark: #b07a10;
+  --page-w: 816px;
+  --page-h: 1056px;
+}
+html, body {
+  background: #1a1a1a;
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Viewport-fitting stage — page always fits the screen */
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scale wrapper — shrinks the 816×1056 page to fit viewport */
+.page-scaler {
+  transform-origin: center center;
+  /* JS sets the scale */
+}
+
+/* ── Page shell ── */
+.page {
+  width: var(--page-w); height: var(--page-h);
+  position: relative; overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.65);
+  background: var(--black);
+}
+.page.light { background: var(--white); }
+
+/* ── Page footer ── */
+.page-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 34px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  z-index: 10;
+  background: rgba(20,20,20,0.6);
+}
+.page.light .page-footer {
+  border-top-color: rgba(0,0,0,0.07);
+  background: rgba(250,248,245,0.8);
+}
+.footer-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; font-weight: 500; letter-spacing: 0.22em;
+  text-transform: uppercase; color: rgba(250,248,245,0.3);
+}
+.page.light .footer-brand { color: rgba(0,0,0,0.22); }
+.footer-web { font-size: 9px; font-weight: 300; color: rgba(250,248,245,0.22); letter-spacing: 0.05em; }
+.page.light .footer-web { color: rgba(0,0,0,0.18); }
+
+/* ── VSI Logo CSS ── */
+.vsi-logo { display: inline-flex; flex-direction: column; align-items: flex-start; }
+.vsi-logo-top { display: flex; flex-direction: row; align-items: flex-end; line-height: 1; }
+.vsi-logo-v { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; color: #e5a020; letter-spacing: -0.03em; }
+.vsi-logo-si { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; color: #faf8f5; letter-spacing: -0.03em; }
+.vsi-logo-rule { background: linear-gradient(90deg, #e5a020 0%, #e5a020 55%, transparent 100%); border-radius: 2px; }
+.vsi-logo-surfaces { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; color: #faf8f5; letter-spacing: 0.18em; line-height: 1; }
+
+/* ── Cover ── */
+.cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; mix-blend-mode: luminosity; }
+.cover-overlay { position: absolute; inset: 0; background: linear-gradient(155deg, rgba(20,20,20,0.1) 0%, rgba(20,20,20,0.65) 50%, rgba(20,20,20,0.97) 100%); }
+.cover-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 72px 80px; }
+.cover-rule { width: 52px; height: 2px; background: var(--gold); margin: 24px 0 20px; }
+.cover-headline { font-family: 'Barlow Condensed', sans-serif; font-size: 76px; font-weight: 700; line-height: 0.9; letter-spacing: -0.02em; text-transform: uppercase; color: var(--white); }
+.cover-sub { font-size: 14px; font-weight: 300; color: rgba(250,248,245,0.62); letter-spacing: 0.05em; margin-top: 18px; line-height: 1.75; max-width: 400px; }
+.cover-territory { margin-top: 26px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); }
+
+/* ── Section divider ── */
+.section-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.18; }
+.section-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(20,20,20,0.25) 0%, rgba(20,20,20,0.9) 100%); }
+.section-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 80px; }
+.section-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-size: 100px; font-weight: 700; line-height: 0.88; letter-spacing: -0.025em; text-transform: uppercase; color: var(--white); }
+.section-rule { width: 48px; height: 2px; background: var(--gold); margin: 22px 0; }
+.section-body { font-size: 14px; font-weight: 300; line-height: 1.8; color: rgba(250,248,245,0.52); max-width: 380px; }
+
+/* ── Product page ── */
+/* Layout:
+   TOP 58%  — slab left (50%) | info right (50%)
+   BOTTOM 42% — installed image full width, contain (no crop)
+*/
+.product-page {
+  position: absolute; inset: 0; bottom: 34px; /* above footer */
+  display: flex; flex-direction: column;
+}
+
+/* Top row */
+.product-top-row {
+  flex: 0 0 58%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+/* Slab — left half of top row */
+.product-slab-col {
+  overflow: hidden; position: relative;
+}
+.product-slab-col img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+/* Info — right half of top row */
+.product-info-panel {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 52px 56px;
+}
+.product-info-panel.dark  { background: var(--black); }
+.product-info-panel.light { background: var(--white); }
+
+.prod-number {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 12px;
+}
+.prod-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 46px; font-weight: 700; line-height: 0.9;
+  letter-spacing: -0.02em; text-transform: uppercase;
+}
+.dark .prod-name  { color: var(--white); }
+.light .prod-name { color: var(--black); }
+
+.prod-rule { width: 34px; height: 2px; background: var(--gold); margin: 20px 0; }
+
+.prod-meta { display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; }
+.prod-size {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.dark .prod-size  { color: rgba(250,248,245,0.32); }
+.light .prod-size { color: rgba(0,0,0,0.28); }
+.prod-finish {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.dark .prod-finish  { color: rgba(250,248,245,0.2); }
+.light .prod-finish { color: rgba(0,0,0,0.18); }
+
+.prod-desc { font-size: 13.5px; font-weight: 300; line-height: 1.85; text-wrap: pretty; }
+.dark .prod-desc  { color: rgba(250,248,245,0.58); }
+.light .prod-desc { color: #5c5650; }
+
+.prod-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 20px; }
+.prod-tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8.5px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; padding: 4px 10px;
+}
+.dark .prod-tag  { border: 1px solid rgba(250,248,245,0.12); color: rgba(250,248,245,0.35); }
+.light .prod-tag { border: 1px solid rgba(0,0,0,0.1);       color: rgba(0,0,0,0.32); }
+
+/* Bottom row — installed image, full width, NO crop (contain) */
+.product-bottom-row {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.product-bottom-row.dark-bg  { background: #0e0e0e; }
+.product-bottom-row.light-bg { background: #f0ede8; }
+/* Gold top border */
+.product-bottom-row::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px; background: rgba(229,160,32,0.35);
+  z-index: 2;
+}
+.product-bottom-row img {
+  max-width: 100%; max-height: 100%;
+  width: auto; height: auto;
+  object-fit: contain; display: block;
+}
+.installed-label {
+  position: absolute; bottom: 10px; right: 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  z-index: 3;
+}
+
+/* ── Back cover ── */
+.back-cover-inner {
+}
+.back-divider { width: 1px; background: rgba(255,255,255,0.08); align-self: stretch; }
+.back-locations { display: flex; gap: 52px; margin-top: 12px; }
+.back-loc { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.back-loc-city { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 5px; }
+.back-loc-addr { font-size: 11.5px; font-weight: 300; color: rgba(250,248,245,0.48); line-height: 1.8; }
+.back-contact { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.back-contact-line { font-size: 12px; font-weight: 300; color: rgba(250,248,245,0.42); letter-spacing: 0.05em; }
+.back-contact-line strong { color: rgba(250,248,245,0.8); font-weight: 500; }
+.back-tagline { margin-top: 40px; font-family: 'Barlow Condensed', sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(250,248,245,0.18); }
+
+/* ── Slab Gallery ── */
+.gallery-page {
+  position: absolute; inset: 0; overflow: hidden;
+  background: #0c0c0c;
+  display: flex; flex-direction: column;
+}
+.gallery-header {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px 14px;
+  border-bottom: 1px solid rgba(229,160,32,0.2);
+  background: rgba(12,12,12,0.95);
+  z-index: 2;
+}
+.gallery-header-left {
+  display: flex; align-items: center; gap: 16px;
+}
+.gallery-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--gold);
+}
+.gallery-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+  text-transform: uppercase; color: var(--white);
+  line-height: 1;
+}
+.gallery-count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.16em;
+  color: rgba(250,248,245,0.28); text-transform: uppercase;
+}
+.gallery-grid {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+  padding: 2px;
+}
+.gallery-tile {
+  position: relative; overflow: hidden; cursor: pointer;
+  background: #1a1a1a;
+}
+.gallery-tile img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.gallery-tile:hover img { transform: scale(1.08); }
+.gallery-tile-label {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 8px 9px;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 60%);
+  opacity: 0; transition: opacity 0.25s;
+}
+.gallery-tile:hover .gallery-tile-label { opacity: 1; }
+.gallery-tile-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--white);
+  line-height: 1.1;
+}
+.gallery-tile-finish {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px; font-weight: 400; letter-spacing: 0.08em;
+  color: var(--gold); margin-top: 2px;
+}
+
+/* Lightbox */
+.gallery-lightbox {
+  position: absolute; inset: 0; z-index: 20;
+  background: #000;
+  display: flex; flex-direction: column;
+  animation: lbIn 0.3s ease;
+}
+@keyframes lbIn { from { opacity:0; } to { opacity:1; } }
+.gallery-lightbox-img {
+  flex: 1; min-height: 0;
+  position: relative; overflow: hidden;
+}
+.gallery-lightbox-img img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.gallery-lightbox-bar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(0,0,0,0.92);
+  border-top: 1px solid rgba(229,160,32,0.25);
+}
+.lb-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px; font-weight: 700; letter-spacing: -0.01em;
+  text-transform: uppercase; color: var(--white);
+}
+.lb-meta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--gold);
+  margin-top: 2px;
+}
+.lb-nav {
+  display: flex; align-items: center; gap: 10px;
+}
+.lb-nav-btn {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7); font-size: 18px;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.18s, color 0.18s;
+}
+.lb-nav-btn:hover { background: rgba(229,160,32,0.18); color: var(--gold); border-color: var(--gold); }
+.lb-close-btn {
+  background: none; border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.55); font-size: 13px;
+  padding: 5px 14px; border-radius: 2px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.18s; margin-left: 8px;
+}
+.lb-close-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── Nav ── */
+.nav-arrow {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 100;
+  background: rgba(0,0,0,0.5); border: none; color: rgba(255,255,255,0.75);
+  width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px); transition: background 0.2s, color 0.2s;
+}
+.nav-arrow:hover { background: rgba(0,0,0,0.75); color: #fff; }
+.nav-arrow.left { left: 12px; }
+.nav-arrow.right { right: 12px; }
+.page-counter {
+  position: fixed; top: 12px; right: 16px; z-index: 100;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.1em; color: rgba(255,255,255,0.45);
+  background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+.page-nav {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 100; background: rgba(0,0,0,0.55); padding: 7px 14px;
+  border-radius: 999px; backdrop-filter: blur(8px); max-width: 90vw;
+}
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.22); cursor: pointer; border: none; padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.nav-dot.active { background: var(--gold); transform: scale(1.3); }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#141414">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#141414"/>
+    <!-- VSI logo mark -->
+    <text x="200" y="420" font-family="sans-serif" font-weight="900" font-size="320" fill="#e5a020" letter-spacing="-10">V</text>
+    <text x="440" y="420" font-family="sans-serif" font-weight="900" font-size="320" fill="#faf8f5" letter-spacing="-10">SI</text>
+    <rect x="200" y="440" width="600" height="6" fill="#e5a020" rx="3"/>
+    <text x="200" y="510" font-family="sans-serif" font-weight="700" font-size="72" fill="#faf8f5" letter-spacing="18">SURFACES</text>
+  </svg>
+</template>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel">
+
+const { useState, useEffect, useCallback } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showSizes": true,
+  "infoTheme": "auto"
+} /*EDITMODE-END*/;
+
+/* ── Logo ── */
+function VSILogo({ width = 200 }) {
+  const fs = width * 0.52;
+  const subFs = width * 0.185;
+  const ruleH = Math.max(2, width * 0.012);
+  const gap = width * 0.04;
+  return (
+    <div className="vsi-logo" style={{ width }}>
+      <div className="vsi-logo-top">
+        <span className="vsi-logo-v" style={{ fontSize: fs }}>V</span>
+        <span className="vsi-logo-si" style={{ fontSize: fs }}>SI</span>
+      </div>
+      <div className="vsi-logo-rule" style={{ width, height: ruleH, marginTop: gap * 0.3 }}></div>
+      <div className="vsi-logo-surfaces" style={{ fontSize: subFs, marginTop: gap * 0.5 }}>SURFACES</div>
+    </div>);
+
+}
+
+/* ── Footer ── */
+function Footer() {
+  return (
+    <div className="page-footer">
+      <span className="footer-brand">VSI Surfaces · Quartz Collection</span>
+      <span className="footer-web">vsisurfaces.com · (941) 259-3876</span>
+    </div>);
+
+}
+
+/* ── Cover ── */
+function CoverPage() {
+  return (
+    <div className="page" data-screen-label="01 Cover">
+      <img className="cover-bg" src="quartz/slabs/Pienza.jpg" alt="" />
+      <div className="cover-overlay"></div>
+      <div className="cover-content">
+        <VSILogo width={196} />
+        <div className="cover-rule"></div>
+        <div className="cover-headline" style={{ fontFamily: "Montserrat" }}>Quartz<br />Collection</div>
+        <div className="cover-sub" style={{ fontFamily: "Montserrat" }}>
+          27 premium engineered quartz surfaces — in a stunning range of colors, patterns, and jumbo formats, sourced from the world's finest manufacturers.
+        </div>
+        <div className="cover-territory" style={{ fontFamily: "Montserrat" }}>Southwest Florida's Premier Stone Supplier</div>
+      </div>
+      <Footer />
+    </div>);
+
+}
+
+/* ── Section divider ── */
+function SectionPage({ label, eyebrow, title, body, img, dark = true }) {
+  return (
+    <div className={`page${dark ? '' : ' light'}`} data-screen-label={label}>
+      {img && <img className="section-bg" src={img} alt="" />}
+      <div className="section-overlay" style={dark ? {} : { background: 'linear-gradient(135deg,rgba(250,248,245,0.1) 0%,rgba(250,248,245,0.92) 100%)' }}></div>
+      <div className="section-content">
+        <div className="section-eyebrow" style={dark ? {} : { color: 'var(--gold-dark)' }}>{eyebrow}</div>
+        <div className="section-title" style={dark ? {} : { color: 'var(--black)' }}>{title}</div>
+        <div className="section-rule"></div>
+        <div className="section-body" style={dark ? {} : { color: 'rgba(0,0,0,0.5)' }}>{body}</div>
+      </div>
+      <Footer />
+    </div>);
+
+}
+
+/* ── Product page ── */
+function ProductPage({ p, index, showSizes, infoTheme }) {
+  const theme = infoTheme === 'auto' ? p.dark ? 'dark' : 'light' : infoTheme;
+  const bottomBg = p.dark ? 'dark-bg' : 'light-bg';
+  return (
+    <div className={`page${theme === 'light' ? ' light' : ''}`} data-screen-label={`${String(index + 3).padStart(2, '0')} ${p.name}`}>
+      <div className="product-page">
+
+        {/* TOP ROW — slab left, info right */}
+        <div className="product-top-row">
+          {/* Slab hero */}
+          <div className="product-slab-col">
+            <img src={p.slab} alt={p.name} />
+          </div>
+          {/* Info panel */}
+          <div className={`product-info-panel ${theme}`}>
+            <div className="prod-number">VSI Collection · {String(index + 1).padStart(2, '0')}</div>
+            <div className="prod-name">{p.name}</div>
+            <div className="prod-rule"></div>
+            <div className="prod-meta">
+              {showSizes && p.size && <div className="prod-size">{p.size}</div>}
+              <div className="prod-finish">{p.finish}</div>
+            </div>
+            <div className="prod-desc">{p.desc}</div>
+            <div className="prod-tags">
+              {p.tags.map((t) => <span className="prod-tag" key={t}>{t}</span>)}
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM ROW — installed image, full width, contained */}
+        <div className={`product-bottom-row ${bottomBg}`}>
+          <img src={p.installed} alt={`${p.name} installed`} />
+          <div className="installed-label">Installed Application</div>
+        </div>
+
+      </div>
+      <Footer />
+    </div>);
+
+}
+
+/* ── Back cover ── */
+function SlabGallery() {
+  const [lightbox, setLightbox] = React.useState(null);
+
+  const open = (i) => setLightbox(i);
+  const close = () => setLightbox(null);
+  const prev = () => setLightbox(i => (i - 1 + PRODUCTS.length) % PRODUCTS.length);
+  const next = () => setLightbox(i => (i + 1) % PRODUCTS.length);
+
+  React.useEffect(() => {
+    if (lightbox === null) return;
+    const fn = e => {
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [lightbox]);
+
+  const p = lightbox !== null ? PRODUCTS[lightbox] : null;
+
+  return (
+    <div className="page" data-screen-label="02 Slab Gallery">
+      <div className="gallery-page">
+        <div className="gallery-header">
+          <div className="gallery-header-left">
+            <VSILogo width={56} />
+            <div style={{width:1,height:28,background:'rgba(229,160,32,0.3)',margin:'0 4px'}}></div>
+            <div>
+              <div className="gallery-eyebrow">VSI Collection Overview</div>
+              <div className="gallery-title">Full Slab Gallery</div>
+            </div>
+          </div>
+          <div className="gallery-count">{PRODUCTS.length} Colors · Polished · 3cm</div>
+        </div>
+        <div className="gallery-grid">
+          {PRODUCTS.map((prod, i) => (
+            <div className="gallery-tile" key={prod.name} onClick={() => open(i)}>
+              <img src={prod.slab} alt={prod.name} />
+              <div className="gallery-tile-label">
+                <div className="gallery-tile-name">{prod.name}</div>
+                <div className="gallery-tile-finish">{prod.finish}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {p && (
+          <div className="gallery-lightbox">
+            <div className="gallery-lightbox-img">
+              <img src={p.slab} alt={p.name} />
+            </div>
+            <div className="gallery-lightbox-bar">
+              <div>
+                <div className="lb-name">{p.name}</div>
+                <div className="lb-meta">{p.finish}{p.size && p.size !== 'Contact showroom' ? ' · ' + p.size : ''}</div>
+              </div>
+              <div className="lb-nav">
+                <button className="lb-nav-btn" onClick={prev}>‹</button>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'10px',letterSpacing:'0.14em',color:'rgba(250,248,245,0.3)'}}>
+                  {lightbox + 1} / {PRODUCTS.length}
+                </span>
+                <button className="lb-nav-btn" onClick={next}>›</button>
+                <button className="lb-close-btn" onClick={close}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PRODUCT DATA — 27 colors, fully mapped
+   ══════════════════════════════════════════ */
+const PRODUCTS = [
+{
+  name: 'Blue Lagoon',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'A rare and striking blue-grey quartz with bold crystalline veining — icy, luminous, and unlike anything else in the collection. A true statement material for those who dare to be different.',
+  tags: ['Blue Grey', 'Crystalline', 'Statement'],
+  slab: 'quartz/slabs/Blue Lagoon.jpg', installed: 'quartz/installed/Blue Lagoon.jpg', dark: true
+},
+{
+  name: 'Calacatta Gold SJ',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'Crisp white with flowing gold and warm beige veining — the quintessential luxury quartz. Evokes the prestige of Italian Calacatta marble with the performance of engineered stone.',
+  tags: ['White', 'Gold Veins', 'Classic Luxury'],
+  slab: 'quartz/slabs/Calacatta Gold.jpg', installed: 'quartz/installed/Calacatta Gold.jpg', dark: false
+},
+{
+  name: 'Caspian',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Cool grey-white with soft horizontal banding and a serene, mineral quality. Inspired by the calming palette of coastal stone — perfect for spa-like bathrooms and refined kitchens.',
+  tags: ['Grey White', 'Horizontal Motion', 'Coastal'],
+  slab: 'quartz/slabs/Caspian.jpg', installed: 'quartz/installed/Caspian.jpg', dark: false
+},
+{
+  name: 'Crystallo Oro',
+  size: 'Contact showroom', sqft: '—', finish: 'Polished · 3cm',
+  desc: 'A luminous white base with delicate gold and champagne crystalline veining. Warm, refined, and extraordinarily beautiful — a collector-quality material for elevated interiors.',
+  tags: ['White', 'Gold Crystal', 'Warm Luxury'],
+  slab: 'quartz/slabs/Crystallo Oro.jpg', installed: 'quartz/installed/Crystallo Oro.jpg', dark: false
+},
+{
+  name: 'Golden Divinity',
+  size: '137″ × 77″', sqft: '73.26 sq ft', finish: 'Polished · 3cm',
+  desc: 'Soft cream-white with elegant flowing gold veins. Exudes warmth and quiet luxury — ideal for bathroom vanities, kitchen countertops, and spa environments where comfort meets sophistication.',
+  tags: ['Cream', 'Gold Veins', 'Warm Tone'],
+  slab: 'quartz/slabs/Golden Divinity.jpg', installed: 'quartz/installed/Golden Divinity.jpg', dark: false
+},
+{
+  name: 'Haze SJ',
+  size: '137″ × 78″', sqft: '74.21 sq ft', finish: 'Polished · 3cm',
+  desc: 'Soft grey-white with a misty, tonal quality and subtle cloud-like movement. A deeply versatile neutral that anchors both contemporary and transitional spaces with understated elegance.',
+  tags: ['Soft Grey', 'Tonal', 'Versatile'],
+  slab: 'quartz/slabs/Haze.jpg', installed: 'quartz/installed/Haze.jpg', dark: false
+},
+{
+  name: 'Lincoln',
+  size: 'Contact showroom', sqft: '—', finish: 'Polished · 3cm',
+  desc: 'A sophisticated dark grey with a fine, uniform texture and quiet depth. Commanding and refined — brings a sense of architectural gravity to countertops, islands, and feature walls.',
+  tags: ['Dark Grey', 'Uniform', 'Architectural'],
+  slab: 'quartz/slabs/Lincoln.jpg', installed: 'quartz/installed/Lincoln.jpg', dark: true
+},
+{
+  name: 'Luna',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Bright white with bold, expansive grey Calacatta-style veining sweeping across the full slab. Every installation is unique — a living surface that commands the room.',
+  tags: ['White', 'Bold Grey', 'Calacatta Style'],
+  slab: 'quartz/slabs/Luna.jpg', installed: 'quartz/installed/Luna.jpg', dark: false
+},
+{
+  name: 'Magnifico',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Bright white with flowing silver-grey Statuario veining. Clean, classic, and extraordinarily versatile — a cornerstone of luxury design trusted by designers across Southwest Florida.',
+  tags: ['White', 'Silver-Grey', 'Statuario'],
+  slab: 'quartz/slabs/Magnifico.jpg', installed: 'quartz/installed/Magnifico.jpg', dark: false
+},
+{
+  name: 'Magnifico SJ',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'The super jumbo format of the beloved Magnifico — identical in character but available in a larger slab for seamless countertop runs, waterfall edges, and book-matched panels.',
+  tags: ['White', 'Silver-Grey', 'Super Jumbo'],
+  slab: 'quartz/slabs/Magnifico SJ.jpg', installed: 'quartz/installed/Magnifico SJ.jpg', dark: false
+},
+{
+  name: 'Magnus',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'A bold concrete-grey with a raw, tactile aesthetic and fine mineral texture. Bridges the gap between industrial and refined — ideal for modern kitchens and commercial installations.',
+  tags: ['Concrete Grey', 'Mineral', 'Modern'],
+  slab: 'quartz/slabs/Magnus.jpg', installed: 'quartz/installed/Magnus.jpg', dark: true
+},
+{
+  name: 'Mont Blanc',
+  size: 'Contact showroom', sqft: '—', finish: 'Polished · 3cm',
+  desc: 'Pure alpine white with soft, barely-there grey veining. Crisp, clean and luminous — the perfect backdrop for any design scheme, from minimalist to classic traditional.',
+  tags: ['Pure White', 'Soft Veins', 'Luminous'],
+  slab: 'quartz/slabs/Mont Blanc.jpg', installed: 'quartz/installed/Mont Blanc.jpg', dark: false
+},
+{
+  name: 'Napolitano Gold',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'A warm cream base with rich amber, gold, and brown veining. Mediterranean warmth and richness in every slab — ideal for luxury kitchens, hospitality, and high-end residential projects.',
+  tags: ['Cream', 'Amber & Gold', 'Mediterranean'],
+  slab: 'quartz/slabs/Napolitano Gold.jpg', installed: 'quartz/installed/Napolitano Gold.jpg', dark: false
+},
+{
+  name: 'Nero Marquina',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Deep jet black with dramatic white and silver veining — a powerful, high-contrast material that makes an unforgettable statement in any space. The ultimate expression of bold luxury.',
+  tags: ['Black', 'White Veins', 'High Contrast'],
+  slab: 'quartz/slabs/Nero Marquina.jpg', installed: 'quartz/installed/Nero Marquina.jpg', dark: true
+},
+{
+  name: 'Pienza',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'White quartz with sweeping grey, gold, and brown multi-tone veins — reminiscent of rare Italian marble. A collector-quality material for the most distinguished residential and commercial interiors.',
+  tags: ['White', 'Multi-tone Veins', 'Exotic'],
+  slab: 'quartz/slabs/Pienza.jpg', installed: 'quartz/installed/Pienza.jpg', dark: false
+},
+{
+  name: 'Ripple',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'White base with layered grey, gold, and cream veining in fluid, organic movement. A dynamic, living surface that anchors any space — part calacatta, part abstract art.',
+  tags: ['White', 'Organic Veins', 'Dynamic'],
+  slab: 'quartz/slabs/Ripple.jpg', installed: 'quartz/installed/Ripple.jpg', dark: false
+},
+{
+  name: 'Riviera Gold',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'Off-white with sweeping diagonal gold and warm taupe veins evoking the warmth of the Mediterranean coastline. Generous proportions ensure seamless large-format installations.',
+  tags: ['Off-White', 'Gold Taupe', 'Jumbo'],
+  slab: 'quartz/slabs/Riviera Gold.jpg', installed: 'quartz/installed/Riviera Gold.jpg', dark: false
+},
+{
+  name: 'Siena Gold',
+  size: '137″ × 77″', sqft: '73.26 sq ft', finish: 'Polished · 3cm',
+  desc: 'A warm ivory ground with rich amber and golden veining — deep, luxurious, and full of character. Named for the warm terracotta and gold palette of the Tuscan city.',
+  tags: ['Ivory', 'Amber Gold', 'Tuscan Warmth'],
+  slab: 'quartz/slabs/Siena Gold.jpg', installed: 'quartz/installed/Siena Gold.jpg', dark: false
+},
+{
+  name: 'Taj Dark SJ',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'Warm sand and cream tones with rich brown and amber striations flowing across the full slab. Grounded, earthy luxuriousness inspired by the finest exotic quartzite from South Asia.',
+  tags: ['Sand', 'Brown Veins', 'Warm Earth'],
+  slab: 'quartz/slabs/Taj Mahal Dark.jpg', installed: 'quartz/installed/Taj Mahal Dark.jpg', dark: false
+},
+{
+  name: 'Taj Light SJ',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'Near-white with delicate rose-gold and champagne veining in a soft, flowing pattern. A lighter interpretation of the Taj series — refined, luminous, and endlessly versatile.',
+  tags: ['White', 'Rose Gold', 'Refined'],
+  slab: 'quartz/slabs/Taj Mahal Light.jpg', installed: 'quartz/installed/Taj Mahal Light.jpg', dark: false
+},
+{
+  name: 'Terra Bianco',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Clean white with earthy grey-brown veining and a warm mineral quality. Bridges pure white and natural stone aesthetics — grounded yet luminous, ideal for organic modern interiors.',
+  tags: ['White', 'Earthy Veins', 'Organic Modern'],
+  slab: 'quartz/slabs/Terra Bianco.jpg', installed: 'quartz/installed/Terra Bianco.jpg', dark: false
+},
+{
+  name: 'Tuscany Gold',
+  size: 'Contact showroom', sqft: '—', finish: 'Polished · 3cm',
+  desc: 'A rich warm-toned quartz with amber, honey, and gold movement inspired by the rolling hills and warm light of Tuscany. Opulent and distinctive — a true design focal point.',
+  tags: ['Warm Gold', 'Amber', 'Opulent'],
+  slab: 'quartz/slabs/Tuscany Gold.jpg', installed: 'quartz/installed/Tuscany Gold.jpg', dark: false
+},
+{
+  name: 'Tuscany Grey',
+  size: 'Contact showroom', sqft: '—', finish: 'Polished · 3cm',
+  desc: 'Sophisticated grey with soft warm undertones and subtle movement. A refined, grown-up neutral that pairs beautifully with both warm wood and cool steel — supremely livable.',
+  tags: ['Warm Grey', 'Subtle', 'Timeless'],
+  slab: 'quartz/slabs/Tuscany Grey.jpg', installed: 'quartz/installed/Tuscany Grey.jpg', dark: false
+},
+{
+  name: 'White Crystallo',
+  size: '138″ × 79″', sqft: '75.71 sq ft', finish: 'Polished · 3cm',
+  desc: 'Bright white with fine crystalline veining in pale silver and pearl. Delicate and luminous — a premium choice for countertops, vanities, and any space where light and purity are the design intent.',
+  tags: ['White', 'Crystal Veins', 'Luminous'],
+  slab: 'quartz/slabs/White Crystallo.jpg', installed: 'quartz/installed/White Crystallo.jpg', dark: false
+},
+{
+  name: 'White Luxe',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'A premium bright white with subtle tonal movement and a glass-like polished finish. The definitive luxury white — flawless, enduring, and at home in any interior from classic to cutting-edge.',
+  tags: ['White', 'Polished', 'Luxury'],
+  slab: 'quartz/slabs/White Lux.jpg', installed: 'quartz/installed/White Lux.jpg', dark: false
+},
+{
+  name: 'White Taj',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Warm ivory-white with silky flowing veins in soft gold and beige. Inspired by the finest quartzite from Rajasthan — serene, warm, and quietly magnificent in any setting.',
+  tags: ['Ivory', 'Warm Veins', 'Soft Luxury'],
+  slab: 'quartz/slabs/White Taj.jpg', installed: 'quartz/installed/White Taj.jpg', dark: false
+},
+{
+  name: 'Wintercreek',
+  size: '126″ × 63″', sqft: '55.13 sq ft', finish: 'Polished · 3cm',
+  desc: 'Crisp white with delicate barely-there veining in soft cream and grey. The quietest and most restrained design in the collection — purity in its simplest, most elegant form.',
+  tags: ['White', 'Minimal Veins', 'Serene'],
+  slab: 'quartz/slabs/Wintercreek.jpg', installed: 'quartz/installed/Wintercreek.jpg', dark: false
+}];
+
+
+/* ── App ── */
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [page, setPage] = useState(0);
+  const [scale, setScale] = useState(1);
+  const PAGE_W = 816,PAGE_H = 1056;
+
+  // Compute scale to fit viewport with padding
+  useEffect(() => {
+    const compute = () => {
+      const pad = 60; // px breathing room for nav arrows + dots
+      const scaleX = (window.innerWidth - pad * 2) / PAGE_W;
+      const scaleY = (window.innerHeight - pad * 2) / PAGE_H;
+      setScale(Math.min(scaleX, scaleY, 1)); // never upscale
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, []);
+
+  const pages = [
+  { key: 'cover', el: <CoverPage /> },
+  { key: 'gallery', el: <SlabGallery /> },
+  ...PRODUCTS.map((p, i) => ({
+    key: p.name,
+    el: <ProductPage p={p} index={i} showSizes={tweaks.showSizes} infoTheme={tweaks.infoTheme} />
+  }))];
+
+
+  const total = pages.length;
+  const go = useCallback((dir) => setPage((p) => Math.max(0, Math.min(total - 1, p + dir))), [total]);
+
+  useEffect(() => {
+    const s = localStorage.getItem('vsi-cat-page');
+    if (s !== null) setPage(Math.min(parseInt(s), total - 1));
+  }, []);
+  useEffect(() => {localStorage.setItem('vsi-cat-page', String(page));}, [page]);
+  useEffect(() => {
+    const fn = (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+    };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [go]);
+
+  return (
+    <>
+      <div className="viewer">
+        <div className="page-scaler" style={{ transform: `scale(${scale})`, width: PAGE_W, height: PAGE_H }}>
+          {pages[page].el}
+        </div>
+      </div>
+      <button className="nav-arrow left" onClick={() => go(-1)}>‹</button>
+      <button className="nav-arrow right" onClick={() => go(1)}>›</button>
+      <div className="page-counter">{page + 1} / {total}</div>
+      <div className="page-nav">
+        {pages.map((p, i) =>
+        <button key={p.key} className={`nav-dot${i === page ? ' active' : ''}`} onClick={() => setPage(i)} />
+        )}
+      </div>
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Display">
+          <TweakToggle label="Show slab sizes" value={tweaks.showSizes} onChange={(v) => setTweak('showSizes', v)} />
+          <TweakRadio label="Info panel" value={tweaks.infoTheme}
+          options={[{ value: 'auto', label: 'Auto' }, { value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]}
+          onChange={(v) => setTweak('infoTheme', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
